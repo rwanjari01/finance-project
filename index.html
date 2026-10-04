@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FinTrack | Personal Finance Manager</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--primary:#635bff;--green:#16a34a;--red:#dc2626;--border:#e7eaf0}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}.hidden{display:none!important}.app{min-height:100vh}.top{height:70px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:5}.brand{font-size:22px;font-weight:800}.brand span{color:var(--primary)}
+.nav{display:flex;gap:8px}.nav button{border:0;background:transparent;padding:10px 13px;border-radius:10px;cursor:pointer;color:var(--muted)}.nav button.active,.nav button:hover{background:#efefff;color:var(--primary)}
+.user{display:flex;align-items:center;gap:12px}.avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e9e7ff;color:var(--primary);font-weight:800}
+.page{max-width:1250px;margin:0 auto;padding:30px}.view{display:none}.view.active{display:block}.hero{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:25px}.hero h1{margin:0 0 6px;font-size:30px}.hero p{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:0 4px 18px rgba(20,25,40,.035)}.stat .label{color:var(--muted);font-size:14px}.stat .value{font-size:28px;font-weight:800;margin-top:9px}.income{color:var(--green)}.expense{color:var(--red)}.balance{color:var(--primary)}
+.two{display:grid;grid-template-columns:1.35fr .85fr;gap:18px;margin-top:18px}.card h2{font-size:18px;margin:0 0 18px}.chartbox{height:300px}.list{display:flex;flex-direction:column;gap:10px}.row{display:flex;justify-content:space-between;align-items:center;padding:13px;border:1px solid var(--border);border-radius:12px}.row small{color:var(--muted)}.pill{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}.pill.in{background:#eaf8ef;color:var(--green)}.pill.out{background:#fff0f0;color:var(--red)}
+.btn{border:0;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:700}.primary{background:var(--primary);color:white}.danger{background:#fee2e2;color:#b91c1c}.ghost{background:#f1f2f6;color:var(--text)}
+.form{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:13px;font-weight:700}.field input,.field select{border:1px solid var(--border);padding:12px;border-radius:10px;outline:none;background:white}.field input:focus,.field select:focus{border-color:var(--primary)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:13px 10px;border-bottom:1px solid var(--border);font-size:14px}th{color:var(--muted);font-size:12px}.actions{display:flex;gap:8px}.progress{height:9px;background:#edf0f5;border-radius:20px;overflow:hidden}.bar{height:100%;background:var(--primary);border-radius:20px}.bar.over{background:var(--red)}
+.auth{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#f5f7ff,#eefaf4)}.authcard{width:min(430px,100%);background:white;border:1px solid var(--border);border-radius:24px;padding:34px;box-shadow:0 20px 60px rgba(30,40,70,.1)}.authcard h1{margin:8px 0}.authcard p{color:var(--muted)}.authform{display:grid;gap:14px;margin-top:22px}.authform input{padding:13px;border:1px solid var(--border);border-radius:10px}.switch{text-align:center;margin-top:18px}.link{color:var(--primary);cursor:pointer;font-weight:700}.toast{position:fixed;right:20px;bottom:20px;background:#172033;color:#fff;padding:13px 17px;border-radius:12px;display:none;z-index:20}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.nav{display:none}.top{padding:0 16px}.page{padding:20px}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.page{padding:15px}.hero{align-items:flex-start;flex-direction:column}.authcard{padding:25px}}
+</style>
+</head>
+<body>
+<div id="auth" class="auth">
+ <div class="authcard">
+  <div class="brand">💰 <span>Fin</span>Track</div>
+  <h1 id="authTitle">Welcome back</h1><p id="authSub">Manage your money with clarity.</p>
+  <form id="authForm" class="authform">
+   <input id="name" placeholder="Full name" class="signupOnly hidden">
+   <input id="email" type="email" placeholder="Email" required>
+   <input id="password" type="password" placeholder="Password (6+ characters)" required>
+   <input id="confirm" type="password" placeholder="Confirm password" class="signupOnly hidden">
+   <button class="btn primary" id="authBtn">Login</button>
+  </form>
+  <div class="switch"><span id="switchText">Don't have an account?</span> <span class="link" id="switchBtn">Create one</span></div>
+  <div id="authMsg" style="text-align:center;margin-top:12px"></div>
+ </div>
+</div>
+
+<div id="app" class="app hidden">
+<header class="top">
+ <div class="brand">💰 <span>Fin</span>Track</div>
+ <nav class="nav">
+  <button data-view="dashboard" class="active">Dashboard</button><button data-view="transactions">Transactions</button>
+  <button data-view="budgets">Budgets</button><button data-view="goals">Goals</button>
+ </nav>
+ <div class="user"><div class="avatar" id="avatar">U</div><div id="userName">User</div><button class="btn ghost" onclick="logout()">Logout</button></div>
+</header>
+<main class="page">
+<section id="dashboard" class="view active">
+ <div class="hero"><div><h1>Good to see you, <span id="hello">there</span> 👋</h1><p>Here is your financial snapshot.</p></div><button class="btn primary" onclick="showView('transactions')">+ Add transaction</button></div>
+ <div class="grid">
+  <div class="card stat"><div class="label">Total Balance</div><div class="value balance" id="balance">₹0</div></div>
+  <div class="card stat"><div class="label">Total Income</div><div class="value income" id="income">₹0</div></div>
+  <div class="card stat"><div class="label">Total Expenses</div><div class="value expense" id="expense">₹0</div></div>
+  <div class="card stat"><div class="label">Savings</div><div class="value" id="savings">₹0</div></div>
+ </div>
+ <div class="two"><div class="card"><h2>Income vs Expenses</h2><div class="chartbox"><canvas id="monthlyChart"></canvas></div></div>
+ <div class="card"><h2>Expense Breakdown</h2><div class="chartbox"><canvas id="categoryChart"></canvas></div></div></div>
+ <div class="card" style="margin-top:18px"><h2>Recent Transactions</h2><div id="recent" class="list"></div></div>
+</section>
+
+<section id="transactions" class="view">
+ <div class="hero"><div><h1>Transactions</h1><p>Track every rupee that comes in or goes out.</p></div></div>
+ <div class="card">
+  <h2>Add Transaction</h2>
+  <form id="txForm" class="form">
+   <div class="field"><label>Type</label><select id="txType"><option value="expense">Expense</option><option value="income">Income</option></select></div>
+   <div class="field"><label>Amount (₹)</label><input id="txAmount" type="number" min="1" step="0.01" required></div>
+   <div class="field"><label>Category</label><select id="txCategory"><option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Education</option><option>Entertainment</option><option>Health</option><option>Salary</option><option>Freelance</option><option>Other</option></select></div>
+   <div class="field"><label>Date</label><input id="txDate" type="date" required></div>
+   <div class="field full"><label>Description</label><input id="txDesc" placeholder="e.g. Lunch, monthly salary..."></div>
+   <div><button class="btn primary">Save Transaction</button></div>
+  </form>
+ </div>
+ <div class="card" style="margin-top:18px"><h2>All Transactions</h2><div style="overflow:auto"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead><tbody id="txTable"></tbody></table></div></div>
+</section>
+
+<section id="budgets" class="view">
+ <div class="hero"><div><h1>Budgets</h1><p>Set monthly limits and control your spending.</p></div></div>
+ <div class="card"><h2>Set / Update Budget</h2><form id="budgetForm" class="form">
+  <div class="field"><label>Category</label><select id="budgetCategory"><option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Education</option><option>Entertainment</option><option>Health</option><option>Other</option></select></div>
+  <div class="field"><label>Monthly limit (₹)</label><input id="budgetAmount" type="number" min="1" required></div>
+  <div class="field"><label>Month</label><input id="budgetMonth" type="month" required></div><div><button class="btn primary">Save Budget</button></div>
+ </form></div>
+ <div id="budgetList" class="grid" style="margin-top:18px"></div>
+</section>
+
+<section id="goals" class="view">
+ <div class="hero"><div><h1>Financial Goals</h1><p>Turn plans into visible progress.</p></div></div>
+ <div class="card"><h2>Create Goal</h2><form id="goalForm" class="form">
+  <div class="field"><label>Goal name</label><input id="goalName" placeholder="New laptop" required></div>
+  <div class="field"><label>Target amount (₹)</label><input id="goalTarget" type="number" min="1" required></div>
+  <div class="field"><label>Already saved (₹)</label><input id="goalSaved" type="number" min="0" value="0"></div>
+  <div class="field"><label>Deadline</label><input id="goalDeadline" type="date"></div>
+  <div><button class="btn primary">Create Goal</button></div>
+ </form></div>
+ <div id="goalList" class="grid" style="margin-top:18px"></div>
+</section>
+</main>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let mode="login", monthlyChart, categoryChart;
+const money=n=>"₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+function toast(s){$("toast").textContent=s;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",2200)}
+function showView(v){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));$(v).classList.add("active");document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===v));if(v==="transactions")loadTransactions();if(v==="budgets")loadBudgets();if(v==="goals")loadGoals()}
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+$("switchBtn").onclick=()=>{mode=mode==="login"?"signup":"login";document.querySelectorAll(".signupOnly").forEach(x=>x.classList.toggle("hidden",mode!=="signup"));$("authTitle").textContent=mode==="signup"?"Create your account":"Welcome back";$("authSub").textContent=mode==="signup"?"Start managing your money smarter.":"Manage your money with clarity.";$("authBtn").textContent=mode==="signup"?"Create Account":"Login";$("switchText").textContent=mode==="signup"?"Already have an account?":"Don't have an account?";$("switchBtn").textContent=mode==="signup"?"Login":"Create one";$("authMsg").textContent=""};
+$("authForm").onsubmit=async e=>{e.preventDefault();$("authMsg").textContent="";let body={email:$("email").value,password:$("password").value};let url="/api/login";if(mode==="signup"){if($("password").value!==$("confirm").value){$("authMsg").textContent="Passwords do not match";return}body.name=$("name").value;url="/api/signup"}let r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});let d=await r.json();if(d.success){await startApp();toast("Welcome to FinTrack")}else $("authMsg").textContent=d.message};
+async function startApp(){let r=await fetch("/api/me"),d=await r.json();if(!d.logged_in){$("auth").classList.remove("hidden");$("app").classList.add("hidden");return}$("auth").classList.add("hidden");$("app").classList.remove("hidden");$("userName").textContent=d.user.name;$("hello").textContent=d.user.name.split(" ")[0];$("avatar").textContent=d.user.name[0].toUpperCase();$("txDate").value=new Date().toISOString().slice(0,10);$("budgetMonth").value=new Date().toISOString().slice(0,7);loadDashboard()}
+async function logout(){await fetch("/api/logout",{method:"POST"});location.reload()}
+async function loadDashboard(){let d=await (await fetch("/api/dashboard")).json();$("balance").textContent=money(d.balance);$("income").textContent=money(d.income);$("expense").textContent=money(d.expense);$("savings").textContent=money(d.savings);$("recent").innerHTML=d.recent.length?d.recent.map(t=>`<div class="row"><div><b>${t.category}</b><br><small>${t.description||"No description"} • ${t.date}</small></div><div><span class="pill ${t.type==="income"?"in":"out"}">${t.type}</span> <b class="${t.type==="income"?"income":"expense"}">${t.type==="income"?"+":"-"}${money(t.amount)}</b></div></div>`).join(""):"<p style='color:#6b7280'>No transactions yet. Add your first one.</p>";
+if(monthlyChart)monthlyChart.destroy();monthlyChart=new Chart($("monthlyChart"),{type:"bar",data:{labels:d.monthly.map(x=>x.month),datasets:[{label:"Income",data:d.monthly.map(x=>x.income)},{label:"Expenses",data:d.monthly.map(x=>x.expense)}]},options:{responsive:true,maintainAspectRatio:false}});
+if(categoryChart)categoryChart.destroy();categoryChart=new Chart($("categoryChart"),{type:"doughnut",data:{labels:d.categories.map(x=>x.category),datasets:[{data:d.categories.map(x=>x.amount)}]},options:{responsive:true,maintainAspectRatio:false}});
+}
+$("txForm").onsubmit=async e=>{e.preventDefault();let body={type:$("txType").value,amount:$("txAmount").value,category:$("txCategory").value,description:$("txDesc").value,date:$("txDate").value};let d=await(await fetch("/api/transactions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();if(d.success){e.target.reset();$("txDate").value=new Date().toISOString().slice(0,10);toast("Transaction added");loadTransactions();loadDashboard()}else toast(d.message)}
+async function loadTransactions(){let d=await(await fetch("/api/transactions")).json();$("txTable").innerHTML=d.transactions.map(t=>`<tr><td>${t.date}</td><td><span class="pill ${t.type==="income"?"in":"out"}">${t.type}</span></td><td>${t.category}</td><td>${t.description||"-"}</td><td class="${t.type==="income"?"income":"expense"}"><b>${t.type==="income"?"+":"-"}${money(t.amount)}</b></td><td><button class="btn danger" onclick="delTx(${t.id})">Delete</button></td></tr>`).join("")||"<tr><td colspan='6'>No transactions.</td></tr>"}
+async function delTx(id){if(!confirm("Delete this transaction?"))return;await fetch("/api/transactions/"+id,{method:"DELETE"});loadTransactions();loadDashboard();toast("Deleted")}
+$("budgetForm").onsubmit=async e=>{e.preventDefault();let d=await(await fetch("/api/budgets",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:$("budgetCategory").value,amount:$("budgetAmount").value,month:$("budgetMonth").value})})).json();if(d.success){e.target.reset();$("budgetMonth").value=new Date().toISOString().slice(0,7);loadBudgets();toast("Budget saved")}else toast(d.message)}
+async function loadBudgets(){let d=await(await fetch("/api/budgets?month="+$("budgetMonth").value)).json();$("budgetList").innerHTML=d.budgets.map(b=>{let pct=Math.min(100,b.spent/b.amount*100);return `<div class="card"><div style="display:flex;justify-content:space-between"><h2>${b.category}</h2><button class="btn danger" onclick="delBudget(${b.id})">Delete</button></div><div style="display:flex;justify-content:space-between;margin-bottom:9px"><b>${money(b.spent)}</b><small>of ${money(b.amount)}</small></div><div class="progress"><div class="bar ${b.spent>b.amount?"over":""}" style="width:${pct}%"></div></div><small style="display:block;margin-top:9px;color:${b.spent>b.amount?"#dc2626":"#6b7280"}">${Math.round(b.spent/b.amount*100)}% used</small></div>`}).join("")||"<div class='card'>No budgets for this month.</div>"}
+async function delBudget(id){await fetch("/api/budgets/"+id,{method:"DELETE"});loadBudgets();toast("Budget deleted")}
+$("goalForm").onsubmit=async e=>{e.preventDefault();let d=await(await fetch("/api/goals",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("goalName").value,target_amount:$("goalTarget").value,saved_amount:$("goalSaved").value,deadline:$("goalDeadline").value})})).json();if(d.success){e.target.reset();loadGoals();toast("Goal created")}else toast(d.message)}
+async function loadGoals(){let d=await(await fetch("/api/goals")).json();$("goalList").innerHTML=d.goals.map(g=>{let pct=Math.min(100,g.saved_amount/g.target_amount*100);return `<div class="card"><div style="display:flex;justify-content:space-between;gap:10px"><h2>${g.name}</h2><button class="btn danger" onclick="delGoal(${g.id})">Delete</button></div><p style="color:#6b7280">${g.deadline?"Deadline: "+g.deadline:"No deadline"}</p><div style="display:flex;justify-content:space-between;margin-bottom:9px"><b>${money(g.saved_amount)}</b><small>Target ${money(g.target_amount)}</small></div><div class="progress"><div class="bar" style="width:${pct}%"></div></div><div style="display:flex;gap:8px;margin-top:12px"><input id="save${g.id}" type="number" min="0" value="${g.saved_amount}" style="padding:9px;border:1px solid var(--border);border-radius:9px;width:130px"><button class="btn primary" onclick="updateGoal(${g.id})">Update</button></div></div>`}).join("")||"<div class='card'>No goals yet. Create your first goal.</div>"}
+async function updateGoal(id){let v=$("save"+id).value;await fetch("/api/goals/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({saved_amount:v})});loadGoals();toast("Goal updated")}
+async function delGoal(id){await fetch("/api/goals/"+id,{method:"DELETE"});loadGoals();toast("Goal deleted")}
+startApp();
+</script>
+</body></html>
